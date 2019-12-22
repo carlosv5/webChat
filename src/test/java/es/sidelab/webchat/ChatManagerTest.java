@@ -1,7 +1,10 @@
 package es.sidelab.webchat;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -34,7 +37,7 @@ public class ChatManagerTest {
 
 		// Comprobar que el chat recibido en el método 'newChat' se llama 'Chat'
 		assertTrue("The method 'newChat' should be invoked with 'Chat', but the value is "
-				+ chatName[0], Objects.equals(chatName[0], "Chat"));
+		                + chatName[0], Objects.equals(chatName[0], "Chat"));
 	}
 
 	@Test
@@ -65,4 +68,84 @@ public class ChatManagerTest {
 				"user2".equals(newUser[0]));
 
 	}
+
+	private void threadTask(String threadNumber, ChatManager chatM) throws InterruptedException, TimeoutException {
+		TestUser user = new TestUser(threadNumber);
+		chatM.newUser(user);
+		for (int i = 0; i < 5; i++) {
+			String chatName = "chat " + i;
+			chatM.newChat(chatName, 5, TimeUnit.SECONDS);
+			chatM.getChat(chatName).addUser(user);
+			chatM.getChat(chatName).printUsers();
+		}
+	}
+
+	@Test
+	public void concurrentChatManager50Chats4Threads() throws InterruptedException, TimeoutException {
+
+		// Crear el chat Manager
+		ChatManager chatManager = new ChatManager(50);
+
+		// Crear hilos
+		Thread t = new Thread(() -> {
+			try {
+				threadTask("0", chatManager);
+			} catch (InterruptedException | TimeoutException | ConcurrentModificationException e) {
+				e.printStackTrace();
+				fail("\nError in thread 0");
+			}
+		});
+
+		Thread t2 = new Thread(() -> {
+			try {
+				threadTask("1", chatManager);
+			} catch (InterruptedException | TimeoutException | ConcurrentModificationException e) {
+				e.printStackTrace();
+				fail("\nError in thread 1");
+			}
+		});
+
+		Thread t3 = new Thread(() -> {
+			try {
+				threadTask("2", chatManager);
+			} catch (InterruptedException | TimeoutException | ConcurrentModificationException e) {
+				e.printStackTrace();
+				fail("\nError in thread 2");
+			}
+		});
+
+		Thread t4 = new Thread(() -> {
+			try {
+				threadTask("3", chatManager);
+			} catch (InterruptedException | TimeoutException | ConcurrentModificationException e) {
+				e.printStackTrace();
+				fail("\nError in thread 3");
+			}
+		});
+
+		// Añadir hilos a la lista
+		ArrayList<Thread> threads = new ArrayList<Thread>(4);
+		threads.add(t);
+		threads.add(t2);
+		threads.add(t3);
+		threads.add(t4);
+
+		// Arrancar todos los hilos
+		for (Thread th : threads) {
+			th.start();
+		}
+
+		// Join para evitar que el test acabe hasta que todos los hilos hayan terminado
+		for (Thread th : threads) {
+			th.join();
+		}
+
+		// Comprobar que el cada chat contiene 4 usuarios
+		for (Chat chat : chatManager.getChats()) {
+			assertTrue("The chat " + chat.getName() + " should have 4 users but some of them are missing.",
+					Objects.equals(chat.getUsers().size(), 4));
+		}
+
+	}
+
 }

@@ -36,8 +36,8 @@ public class ChatManagerTest {
 		chatManager.newChat("Chat", 5, TimeUnit.SECONDS);
 
 		// Comprobar que el chat recibido en el método 'newChat' se llama 'Chat'
-		assertTrue("The method 'newChat' should be invoked with 'Chat', but the value is "
-		                + chatName[0], Objects.equals(chatName[0], "Chat"));
+		assertTrue("The method 'newChat' should be invoked with 'Chat', but the value is " + chatName[0],
+				Objects.equals(chatName[0], "Chat"));
 	}
 
 	@Test
@@ -146,6 +146,43 @@ public class ChatManagerTest {
 					Objects.equals(chat.getUsers().size(), 4));
 		}
 
+	}
+
+	@Test
+	public void paralelNotifications() throws InterruptedException, TimeoutException {
+
+		// Crear el chat Manager
+		ChatManager chatManager = new ChatManager(1);
+
+		//Crear chat
+		final String chatName = "random";
+		chatManager.newChat(chatName, 5, TimeUnit.SECONDS);
+
+		long tInitial, testTime;
+		tInitial = System.currentTimeMillis();
+
+		for (int i = 0; i < 4; i++) {
+			TestUser user = new TestUser("user" + i) {
+				@Override
+				public void newMessage(Chat chat, User user, String message) {
+					try {
+						Thread.sleep(1000);
+						super.newMessage(chat, user, message);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+						fail("\nError in user" + user.getName());
+					}
+				}
+			};
+			chatManager.newUser(user);
+			chatManager.getChat(chatName).addUser(user);
+		}
+
+		User user0 = chatManager.getUser("user0");
+		chatManager.getChat(chatName).sendMessage(user0, "Hello world - I am " + user0.getName());
+
+		testTime = System.currentTimeMillis() - tInitial;
+		assert(testTime < 1500);
 	}
 
 }

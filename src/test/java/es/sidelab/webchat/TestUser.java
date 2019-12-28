@@ -32,7 +32,7 @@ public class TestUser implements User {
 
 	@Override
 	public void newUserInChat(Chat chat, User user) {
-		System.out.println("New user " + user.getName() + " in chat " + chat.getName());
+		System.out.println("New user " + user.getName() + " joined chat " + chat.getName());
 	}
 
 	@Override
@@ -42,8 +42,8 @@ public class TestUser implements User {
 
 	@Override
 	public void newMessage(Chat chat, User user, String message) {
-		System.out.println("New message '" + message + "' from user " + user.getName()
-				+ " in chat " + chat.getName());
+		System.out.println("New message '" + message + "' recieved from user " + user.getName()
+				+ " in chat " + chat.getName() + ". I am " + this.name);
 	}
 
 	@Override

@@ -1,9 +1,12 @@
 package es.codeurjc.webchat;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 
 public class Chat {
 
@@ -47,8 +50,20 @@ public class Chat {
 	}
 
 	public void sendMessage(User user, String message) {
+		List<Thread> threads = new ArrayList<Thread>(users.size());
+		CountDownLatch cdl = new CountDownLatch(users.size());
 		for (User u : users.values()) {
-			u.newMessage(this, user, message);
+			Thread t = new Thread(() -> {
+				u.newMessage(this, user, message);
+				cdl.countDown();
+			});
+			threads.add(t);
+			t.start();
+		}
+		try {
+			cdl.await();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 	}
 

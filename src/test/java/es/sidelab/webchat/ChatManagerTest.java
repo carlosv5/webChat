@@ -154,7 +154,7 @@ public class ChatManagerTest {
 		// Crear el chat Manager
 		ChatManager chatManager = new ChatManager(1);
 
-		//Crear chat
+		// Crear chat
 		final String chatName = "random";
 		chatManager.newChat(chatName, 5, TimeUnit.SECONDS);
 
@@ -182,7 +182,60 @@ public class ChatManagerTest {
 		chatManager.getChat(chatName).sendMessage(user0, "Hello world - I am " + user0.getName());
 
 		testTime = System.currentTimeMillis() - tInitial;
-		assert(testTime < 1500);
+		assert (testTime < 1500);
 	}
 
+	@Test
+	public void messagesInOrder() throws InterruptedException, TimeoutException {
+
+		// Crear el chat Manager
+		ChatManager chatManager = new ChatManager(1);
+
+		// Crear chat
+		final String chatName = "random";
+		chatManager.newChat(chatName, 5, TimeUnit.SECONDS);
+		boolean orderedMessages = false;
+
+		TestUser user0 = new TestUser("user0") {
+			@Override
+			public void newMessage(Chat chat, User user, String message) {
+				if (this.name == "user1")
+					System.out.println("New message '" + message + "' recieved from user " + user.getName()
+							+ " in chat " + chat.getName() + ". I am " + this.name);
+
+			}
+		};
+		TestUser user2 = new TestUser("user2");
+
+		TestUser user1 = new TestUser("user1") {
+			@Override
+			public void newMessage(Chat chat, User user, String message) {
+				try {
+					Thread.sleep(500);
+					if (this.name == "user1")
+						System.out.println("New message '" + message + "' recieved from user " + user.getName()
+								+ " in chat " + chat.getName() + ". I am " + this.name);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					fail("\nError in user" + user.getName());
+				}
+			}
+		};
+		chatManager.newUser(user0);
+		chatManager.newUser(user1);
+		chatManager.newUser(user2);
+		chatManager.getChat(chatName).addUser(user0);
+		chatManager.getChat(chatName).addUser(user1);
+
+		Thread t0 = new Thread(() -> {
+			for (int i = 0; i < 5; i++) {
+				chatManager.getChat(chatName).sendMessage(user0, user0.getName() + " mesage " + i);
+			}
+		});
+		t0.start();
+		t0.join();
+
+		// Hay que ver como hacerlo
+		assertTrue(orderedMessages);
+	}
 }

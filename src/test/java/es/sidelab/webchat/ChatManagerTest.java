@@ -38,6 +38,8 @@ public class ChatManagerTest {
 		// Comprobar que el chat recibido en el método 'newChat' se llama 'Chat'
 		assertTrue("The method 'newChat' should be invoked with 'Chat', but the value is " + chatName[0],
 				Objects.equals(chatName[0], "Chat"));
+		assertTrue("The chat " + chatName[0] + " has not been created properly",
+				Objects.nonNull(chatManager.getChat(chatName[0])));
 	}
 
 	@Test
@@ -238,4 +240,6 @@ public class ChatManagerTest {
 		// Hay que ver como hacerlo
 		assertTrue(orderedMessages);
 	}
+	
 }
+

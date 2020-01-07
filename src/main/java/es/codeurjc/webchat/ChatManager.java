@@ -1,7 +1,9 @@
 package es.codeurjc.webchat;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -40,10 +42,20 @@ public class ChatManager {
 			Chat newChat = new Chat(this, name);
 			chats.putIfAbsent(name, newChat);
 			
+			List<Thread> threads = new ArrayList<Thread>(users.size());
 			for(User user : users.values()){
-				user.newChat(newChat);
+				Thread t = new Thread(() -> {
+					user.newChat(newChat);
+				});
+				threads.add(t);
 			}
-
+			for(Thread th : threads) {
+				th.start();
+			}
+			
+			for(Thread th : threads ) {
+				th.join();
+			}
 			return newChat;
 		}
 	}
@@ -55,8 +67,23 @@ public class ChatManager {
 					+ chat.getName() + "\'");
 		}
 
+		List<Thread> threads = new ArrayList<Thread>(users.size());
 		for(User user : users.values()){
-			user.chatClosed(removedChat);
+			Thread t = new Thread(() -> {
+				user.chatClosed(removedChat);
+			});
+			threads.add(t);
+		}
+		for(Thread th : threads) {
+			th.start();
+		}
+		for(Thread th : threads) {
+			try {
+				th.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 

@@ -14,7 +14,7 @@ public class Chat {
 
 	private String name;
 	private Map<String, User> users = new ConcurrentHashMap<>();
-	private Map<User,Queue<String>> userMessages = new ConcurrentHashMap<>();
+	private Map<User, Queue<String>> userMessages = new ConcurrentHashMap<>();
 	private ChatManager chatManager;
 
 	public Chat(ChatManager chatManager, String name) {
@@ -30,9 +30,24 @@ public class Chat {
 	public void addUser(User user) {
 		users.putIfAbsent(user.getName(), user);
 		userMessages.putIfAbsent(user, new LinkedList<String>());
+		List<Thread> threads = new ArrayList<Thread>(users.size());
 		for (User u : users.values()) {
 			if (u != user) {
-				u.newUserInChat(this, user);
+				Thread t = new Thread(() -> {
+					u.newUserInChat(this, user);
+				});
+				threads.add(t);
+			}
+		}
+		for (Thread th : threads) {
+			th.start();
+		}
+		for (Thread th : threads) {
+			try {
+				th.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 
@@ -56,23 +71,23 @@ public class Chat {
 	public void sendMessage(User user, String message) {
 		List<Thread> threads = new ArrayList<Thread>(users.size());
 		CountDownLatch cdl = new CountDownLatch(users.size());
-		
-		for (User u: users.values()) {
+
+		for (User u : users.values()) {
 			this.userMessages.get(u).add(message);
 		}
-		
+
 		for (User u : users.values()) {
-			
+
 			Thread t = new Thread(() -> {
 				u.newMessage(this, user, userMessages.get(u).poll());
 				cdl.countDown();
 			});
 			threads.add(t);
 		}
-		for(Thread th : threads) {
+		for (Thread th : threads) {
 			th.start();
 		}
-		
+
 		try {
 			cdl.await();
 		} catch (InterruptedException e) {
@@ -86,8 +101,23 @@ public class Chat {
 
 	public void printUsers() {
 		System.out.println("Usuarios " + this.name);
+		List<Thread> threads = new ArrayList<Thread>(users.size());
 		for (User u : users.values()) {
-			System.out.println(this.name + " - " + u.getName());
+			Thread t = new Thread(() -> {
+				System.out.println(this.name + " - " + u.getName());
+			});
+			threads.add(t);
+		}
+		for(Thread th : threads) {
+			th.start();
+		}
+		for(Thread th : threads) {
+			try {
+				th.join();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 	}

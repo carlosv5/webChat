@@ -144,8 +144,8 @@ public class ChatManagerTest {
 		for (Thread th : threads) {
 			th.join();
 			if (exc[0] != null) {
-	            throw exc[0];
-	        }
+				throw exc[0];
+			}
 		}
 
 		// Comprobar que el cada chat contiene 4 usuarios
@@ -209,7 +209,7 @@ public class ChatManagerTest {
 			public void newMessage(Chat chat, User user, String message) {
 				if (this.name == "user1")
 					System.out.println("New message '" + message + "' recieved from user " + user.getName()
-							+ " in chat " + chat.getName() + ". I am " + this.name);
+					+ " in chat " + chat.getName() + ". I am " + this.name);
 
 			}
 		};
@@ -222,7 +222,7 @@ public class ChatManagerTest {
 					Thread.sleep(500);
 					if (this.name == "user1")
 						System.out.println("New message '" + message + "' recieved from user " + user.getName()
-								+ " in chat " + chat.getName() + ". I am " + this.name);
+						+ " in chat " + chat.getName() + ". I am " + this.name);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 					fail("\nError in user" + user.getName());
@@ -246,6 +246,6 @@ public class ChatManagerTest {
 		// Hay que ver como hacerlo
 		assertTrue(orderedMessages);
 	}
-	
+
 }
 

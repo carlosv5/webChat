@@ -83,10 +83,13 @@ public class ChatManagerTest {
 	}
 
 	@Test
-	public void concurrentChatManager50Chats4Threads() throws InterruptedException, TimeoutException {
+	public void concurrentChatManager50Chats4Threads() throws Exception {
 
 		// Crear el chat Manager
 		ChatManager chatManager = new ChatManager(50);
+
+		// Final array to communicate main thread if there is exception
+		final Exception[] exc = new Exception[1];
 
 		// Crear hilos
 		Thread t = new Thread(() -> {
@@ -94,7 +97,7 @@ public class ChatManagerTest {
 				threadTask("0", chatManager);
 			} catch (InterruptedException | TimeoutException | ConcurrentModificationException e) {
 				e.printStackTrace();
-				fail("\nError in thread 0");
+				exc[0] = e;
 			}
 		});
 
@@ -103,7 +106,7 @@ public class ChatManagerTest {
 				threadTask("1", chatManager);
 			} catch (InterruptedException | TimeoutException | ConcurrentModificationException e) {
 				e.printStackTrace();
-				fail("\nError in thread 1");
+				exc[0] = e;
 			}
 		});
 
@@ -112,7 +115,7 @@ public class ChatManagerTest {
 				threadTask("2", chatManager);
 			} catch (InterruptedException | TimeoutException | ConcurrentModificationException e) {
 				e.printStackTrace();
-				fail("\nError in thread 2");
+				exc[0] = e;
 			}
 		});
 
@@ -121,7 +124,7 @@ public class ChatManagerTest {
 				threadTask("3", chatManager);
 			} catch (InterruptedException | TimeoutException | ConcurrentModificationException e) {
 				e.printStackTrace();
-				fail("\nError in thread 3");
+				exc[0] = e;
 			}
 		});
 
@@ -140,6 +143,9 @@ public class ChatManagerTest {
 		// Join para evitar que el test acabe hasta que todos los hilos hayan terminado
 		for (Thread th : threads) {
 			th.join();
+			if (exc[0] != null) {
+	            throw exc[0];
+	        }
 		}
 
 		// Comprobar que el cada chat contiene 4 usuarios

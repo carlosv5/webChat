@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import es.codeurjc.webchat.Chat;
 import es.codeurjc.webchat.ChatManager;
@@ -257,6 +258,22 @@ public class ChatManagerTest {
 
 		isInOrder[0] = exchanger.exchange(isInOrder[0]);
 		assertTrue(isInOrder[0]);
+	}
+
+
+	@Test
+	public void newChatWithTimeOut() throws InterruptedException, TimeoutException {
+		ExpectedException exception = ExpectedException.none();
+
+		// Crear el chat Manager
+		ChatManager chatManager = new ChatManager(0);
+
+		// Crear un nuevo chat en el chatManager
+		try {
+			chatManager.newChat("Chat", 5, TimeUnit.SECONDS);
+		} catch(TimeoutException e) {
+			exception.expect(TimeoutException.class);
+		}
 	}
 
 }

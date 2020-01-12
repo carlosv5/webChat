@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -158,6 +159,7 @@ public class ChatManagerTest {
 
 	@Test
 	public void paralelNotifications() throws InterruptedException, TimeoutException {
+		int numberOfUsers = 4;
 
 		// Crear el chat Manager
 		ChatManager chatManager = new ChatManager(1);
@@ -168,14 +170,17 @@ public class ChatManagerTest {
 
 		long tInitial, testTime;
 		tInitial = System.currentTimeMillis();
+		CountDownLatch cdl = new CountDownLatch(numberOfUsers);
 
-		for (int i = 0; i < 4; i++) {
+
+		for (int i = 0; i < numberOfUsers; i++) {
 			TestUser user = new TestUser("user" + i) {
 				@Override
 				public void newMessage(Chat chat, User user, String message) {
 					try {
 						Thread.sleep(1000);
 						super.newMessage(chat, user, message);
+						cdl.countDown();
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 						fail("\nError in user" + user.getName());
@@ -188,6 +193,7 @@ public class ChatManagerTest {
 
 		User user0 = chatManager.getUser("user0");
 		chatManager.getChat(chatName).sendMessage(user0, "Hello world - I am " + user0.getName());
+		cdl.await();
 
 		testTime = System.currentTimeMillis() - tInitial;
 		assert (testTime < 1500);

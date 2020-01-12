@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 
 public class Chat {
 
@@ -70,7 +69,6 @@ public class Chat {
 
 	public void sendMessage(User user, String message) {
 		List<Thread> threads = new ArrayList<Thread>(users.size());
-		CountDownLatch cdl = new CountDownLatch(users.size());
 
 		for (User u : users.values()) {
 			this.userMessages.get(u).add(message);
@@ -80,7 +78,6 @@ public class Chat {
 
 			Thread t = new Thread(() -> {
 				u.newMessage(this, user, userMessages.get(u).poll());
-				cdl.countDown();
 			});
 			threads.add(t);
 		}
@@ -88,11 +85,6 @@ public class Chat {
 			th.start();
 		}
 
-		try {
-			cdl.await();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
 	public void close() {

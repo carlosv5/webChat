@@ -22,14 +22,15 @@ public class ChatManagerTest {
 
 	@Test
 	public void newChat() throws InterruptedException, TimeoutException {
-
 		// Crear el chat Manager
 		ChatManager chatManager = new ChatManager(5);
 
 		// Crear un usuario que guarda en chatName el nombre del nuevo chat
 		final String[] chatName = new String[1];
 
+
 		chatManager.newUser(new TestUser("user") {
+			@Override
 			public void newChat(Chat chat) {
 				chatName[0] = chat.getName();
 			}
@@ -39,10 +40,34 @@ public class ChatManagerTest {
 		chatManager.newChat("Chat", 5, TimeUnit.SECONDS);
 
 		// Comprobar que el chat recibido en el método 'newChat' se llama 'Chat'
-		assertTrue("The method 'newChat' should be invoked with 'Chat', but the value is " + chatName[0],
-				Objects.equals(chatName[0], "Chat"));
+		assertTrue("The method 'newChat' should be invoked with 'Chat', but the value is "
+				+ chatName[0], Objects.equals(chatName[0], "Chat"));
 		assertTrue("The chat " + chatName[0] + " has not been created properly",
 				Objects.nonNull(chatManager.getChat(chatName[0])));
+		assertTrue("The number of chats must be 1 once the only chat is removed", chatManager.getChats().size() == 1);
+	}
+
+	@Test
+	public void removeChat() throws InterruptedException, TimeoutException {
+		final String[] chatName = new String[1];
+
+		ChatManager chatManager = new ChatManager(5);
+
+		chatManager.newUser(new TestUser("user") {
+			@Override
+			public void chatClosed(Chat chat) {
+				chatName[0] = chat.getName();
+			}
+		});
+
+		// Crear un nuevo chat en el chatManager
+		chatManager.newChat("Chat", 5, TimeUnit.SECONDS);
+
+		// Borrar el chat
+		chatManager.closeChat(chatManager.getChat("Chat"));
+		assertTrue("The method 'chatClosed' should be invoked with 'Chat', but the value is "
+				+ chatName[0], Objects.equals(chatName[0], "Chat"));
+		assertTrue("The number of chats must be 0 once the only chat is removed", chatManager.getChats().size() == 0);
 	}
 
 	@Test
@@ -71,6 +96,37 @@ public class ChatManagerTest {
 
 		assertTrue("Notified new user '" + newUser[0] + "' is not equal than user name 'user2'",
 				"user2".equals(newUser[0]));
+
+	}
+
+	@Test
+	public void userLeftTheChat() throws InterruptedException, TimeoutException {
+
+		ChatManager chatManager = new ChatManager(5);
+
+		final String[] leftUser = new String[1];
+
+		TestUser user1 = new TestUser("user1");
+
+		TestUser user2 = new TestUser("user2") {
+			@Override
+			public void userExitedFromChat(Chat chat, User user) {
+				leftUser[0] = user.getName();
+			}
+		};
+
+		chatManager.newUser(user1);
+		chatManager.newUser(user2);
+
+		Chat chat = chatManager.newChat("Chat", 5, TimeUnit.SECONDS);
+
+		chat.addUser(user1);
+		chat.addUser(user2);
+
+		chat.removeUser(user1);
+
+		assertTrue("Notified removed user '" + leftUser[0] + "' is not equal than user name 'user1'",
+				"user1".equals(leftUser[0]));
 
 	}
 

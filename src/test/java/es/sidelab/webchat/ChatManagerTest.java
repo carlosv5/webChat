@@ -341,17 +341,14 @@ public class ChatManagerTest {
 		ChatManager chatManager = new ChatManager(1);
 		String chatName1 = "Chat1";
 		chatManager.newChat(chatName1, 5, TimeUnit.SECONDS);
-		System.out.println(chatManager.getChats().size());
 
 		// Crear un nuevo chat en el chatManager en la thread t
 		String chatName2 = "Chat2";
 		Thread t = new Thread(() -> {
 			try {
-				System.out.println(chatManager.getChats().size());
 				chatManager.newChat(chatName2, 5, TimeUnit.SECONDS);
 				cdl.countDown();
 			} catch (InterruptedException | TimeoutException | ConcurrentModificationException e) {
-				System.out.println("excepcion");
 				e.printStackTrace();
 				exception[0] = e;
 			}

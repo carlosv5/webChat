@@ -11,6 +11,7 @@ import java.util.concurrent.Exchanger;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.tomcat.jni.Time;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
@@ -347,7 +348,6 @@ public class ChatManagerTest {
 		Thread t = new Thread(() -> {
 			try {
 				chatManager.newChat(chatName2, 5, TimeUnit.SECONDS);
-				cdl.countDown();
 			} catch (InterruptedException | TimeoutException | ConcurrentModificationException e) {
 				e.printStackTrace();
 				exception[0] = e;
@@ -355,7 +355,10 @@ public class ChatManagerTest {
 		});
 
 		t.start();
-		cdl.await();
+		long timeToSleep = 5L; //Fix
+		TimeUnit.SECONDS.sleep(timeToSleep);
+
+		System.out.print("going to remove a chat");
 		chatManager.closeChat(chatManager.getChat(chatName1));
 
 		t.join();

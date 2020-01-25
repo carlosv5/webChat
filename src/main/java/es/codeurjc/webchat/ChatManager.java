@@ -103,5 +103,10 @@ public class ChatManager {
 		return users.get(userName);
 	}
 
+	public boolean existChat(String chatName) {
+		return chats.get(chatName) != null;
+
+	}
+
 	public void close() {}
 }

@@ -332,5 +332,42 @@ public class ChatManagerTest {
 		}
 	}
 
+	@Test
+	public void newChatWithoutTimeOutBecauseAnotherChatIsRemoved() throws Exception {
+		final Exception[] exception = new Exception[1];
+		CountDownLatch cdl = new CountDownLatch(1);
+
+		// Crear el chat Manager
+		ChatManager chatManager = new ChatManager(1);
+		String chatName1 = "Chat1";
+		chatManager.newChat(chatName1, 5, TimeUnit.SECONDS);
+		System.out.println(chatManager.getChats().size());
+
+		// Crear un nuevo chat en el chatManager en la thread t
+		String chatName2 = "Chat2";
+		Thread t = new Thread(() -> {
+			try {
+				System.out.println(chatManager.getChats().size());
+				chatManager.newChat(chatName2, 5, TimeUnit.SECONDS);
+				cdl.countDown();
+			} catch (InterruptedException | TimeoutException | ConcurrentModificationException e) {
+				System.out.println("excepcion");
+				e.printStackTrace();
+				exception[0] = e;
+			}
+		});
+
+		t.start();
+		cdl.await();
+		chatManager.closeChat(chatManager.getChat(chatName1));
+
+		t.join();
+		if (exception[0] != null) {
+			throw exception[0];
+		}
+		assertTrue(chatManager.getChats().size() == 1);
+		assertTrue(chatManager.existChat(chatName2));
+
+	}
 }
 

@@ -11,7 +11,6 @@ import java.util.concurrent.Exchanger;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.tomcat.jni.Time;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
@@ -264,7 +263,6 @@ public class ChatManagerTest {
 		//Exchanger to communicate if there are messages in wrong order
 		Exchanger<Boolean> exchanger = new Exchanger<Boolean>();
 		boolean[] isInOrder = new boolean[1];
-
 		// Crear el chat Manager
 		ChatManager chatManager = new ChatManager(1);
 
@@ -282,12 +280,12 @@ public class ChatManagerTest {
 			@Override
 			public void newMessage(Chat chat, User user, String message) {
 				try {
-
 					Thread.sleep(500);
+					System.out.println("New message '" + message + "' recieved from user " + user.getName()
+					+ " in chat " + chat.getName() + ". I am " + this.name);
 					if(counter == Integer.parseInt(message)){
 						counter++;
 						isInOrder[0] = exchanger.exchange(true);
-
 					} else {
 						isInOrder[0] = exchanger.exchange(false);
 					}
@@ -297,6 +295,7 @@ public class ChatManagerTest {
 				}
 			}
 		};
+
 		chatManager.newUser(user1);
 		chatManager.newUser(user2);
 		chatManager.getChat(chatName).addUser(user1);
@@ -309,6 +308,7 @@ public class ChatManagerTest {
 		});
 		t0.start();
 		t0.join();
+
 		if (exc[0] != null) {
 			throw exc[0];
 		}
@@ -336,18 +336,18 @@ public class ChatManagerTest {
 	@Test
 	public void newChatWithoutTimeOutBecauseAnotherChatIsRemoved() throws Exception {
 		final Exception[] exception = new Exception[1];
-		CountDownLatch cdl = new CountDownLatch(1);
+		final long timeToSleep = 5000;
 
 		// Crear el chat Manager
 		ChatManager chatManager = new ChatManager(1);
 		String chatName1 = "Chat1";
-		chatManager.newChat(chatName1, 5, TimeUnit.SECONDS);
+		chatManager.newChat(chatName1, timeToSleep, TimeUnit.MILLISECONDS);
 
 		// Crear un nuevo chat en el chatManager en la thread t
 		String chatName2 = "Chat2";
 		Thread t = new Thread(() -> {
 			try {
-				chatManager.newChat(chatName2, 5, TimeUnit.SECONDS);
+				chatManager.newChat(chatName2, timeToSleep, TimeUnit.MILLISECONDS);
 			} catch (InterruptedException | TimeoutException | ConcurrentModificationException e) {
 				e.printStackTrace();
 				exception[0] = e;
@@ -355,10 +355,8 @@ public class ChatManagerTest {
 		});
 
 		t.start();
-		long timeToSleep = 5L; //Fix
-		TimeUnit.SECONDS.sleep(timeToSleep);
+		TimeUnit.MILLISECONDS.sleep(4500);
 
-		System.out.print("going to remove a chat");
 		chatManager.closeChat(chatManager.getChat(chatName1));
 
 		t.join();

@@ -9,8 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.tomcat.jni.Time;
-
 public class ChatManager {
 
 	private Map<String, Chat> chats = new ConcurrentHashMap<>();
@@ -39,13 +37,11 @@ public class ChatManager {
 
 			Thread t = new Thread(() -> {
 				long start = System.currentTimeMillis();
-				long end = start + 100000000; //Fix time as parameter
+				long end = start + timeout;
 				noCapacityForMoreChats[0] = true;
 				while(System.currentTimeMillis() < end) {
 					noCapacityForMoreChats[0] = chats.size() == maxChats;
-					System.out.println("bucle");
 					if(!noCapacityForMoreChats[0]) {
-						System.out.println("break");
 						break;
 					}
 				}

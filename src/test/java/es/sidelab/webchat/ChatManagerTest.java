@@ -260,63 +260,67 @@ public class ChatManagerTest {
 	@Test
 	public void messagesInOrder() throws Exception {
 
-		//Exchanger to communicate if there are messages in wrong order
-		Exchanger<Boolean> exchanger = new Exchanger<Boolean>();
-		boolean[] isInOrder = new boolean[1];
-		// Crear el chat Manager
-		ChatManager chatManager = new ChatManager(1);
+		final Exception[] exception = new Exception[1];
+		final Exchanger<Boolean> exchanger = new Exchanger <Boolean>();
+		final boolean []inOrder = new boolean[1];
+		final int counter[] = new int[1];
+		counter[0]=1;
+		inOrder[0]=true;
 
-		// Final array to communicate main thread if there is exception
-		final Exception[] exc = new Exception[1];
+		final String msg[] =new String[5];
 
-		// Crear chat
-		final String chatName = "random";
-		chatManager.newChat(chatName, 5, TimeUnit.SECONDS);
+		ChatManager chatManager = new ChatManager(5);
 
-		TestUser user1 = new TestUser("user1");
+		TestUser user1 = new TestUser("user1");		
 
 		TestUser user2 = new TestUser("user2") {
-			private int counter = 0;
 			@Override
 			public void newMessage(Chat chat, User user, String message) {
 				try {
 					Thread.sleep(500);
 					System.out.println("New message '" + message + "' recieved from user " + user.getName()
 					+ " in chat " + chat.getName() + ". I am " + this.name);
-					if(counter == Integer.parseInt(message)){
-						counter++;
-						isInOrder[0] = exchanger.exchange(true);
-					} else {
-						isInOrder[0] = exchanger.exchange(false);
-					}
-				} catch (InterruptedException e) {
+					msg[counter[0]-1]=message;
+					inOrder[0]= inOrder[0] && (counter[0] == Integer.parseInt(message));
+					exchanger.exchange(inOrder[0]);
+					counter[0]++;
+				}catch(InterruptedException e) {
 					e.printStackTrace();
-					exc[0] = e;
+					exception[0] = e;
 				}
 			}
 		};
 
 		chatManager.newUser(user1);
 		chatManager.newUser(user2);
-		chatManager.getChat(chatName).addUser(user1);
-		chatManager.getChat(chatName).addUser(user2);
 
-		Thread t0 = new Thread(() -> {
-			for (int i = 0; i < 5; i++) {
-				chatManager.getChat(chatName).sendMessage(user1, Integer.toString(i));
+		Chat chat = chatManager.newChat("Chat", 5, TimeUnit.SECONDS);
+		chat.addUser(user1);
+		chat.addUser(user2);
+
+		Thread thread = new Thread(() -> {
+			for (int i = 1; i < 6; i++) {
+				chat.sendMessage(user1, Integer.toString(i));
+				try {
+					exchanger.exchange(false);
+				}catch(Exception e) {
+					e.printStackTrace();
+					exception[0] = e;
+				}
 			}
 		});
-		t0.start();
-		t0.join();
 
-		if (exc[0] != null) {
-			throw exc[0];
+		thread.start();
+		thread.join();
+		if (exception[0] != null) {
+			throw exception[0];
 		}
-
-		isInOrder[0] = exchanger.exchange(isInOrder[0]);
-		assertTrue(isInOrder[0]);
+		assertTrue("Messages were not ordered", inOrder[0]);
+		for (int j=1;j<6;j++) {
+			assertTrue("Recieved " + j + " expected"+msg[j-1], 
+					Integer.parseInt(msg[j-1])==j);
+		}
 	}
-
 
 	@Test
 	public void newChatWithTimeOut() throws InterruptedException, TimeoutException {
